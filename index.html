@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador G3C - Flexible</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        'print': {'raw': 'print'},
+                    },
+                    colors: {
+                        brand: {
+                            black: '#000000',
+                            gray: '#4a4a4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .hidden-section { display: none; }
+        
+        /* Inputs High Contrast */
+        input, select, textarea {
+            border-color: #d1d5db;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #000000 !important;
+            box-shadow: 0 0 0 1px #000000 !important;
+            outline: none;
+        }
+        /* Sliders */
+        input[type=range] {
+            accent-color: black;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-white font-sans text-slate-900 pb-20 print:pb-0">
+
+    <header class="bg-black text-white p-4 sticky top-0 z-50 shadow-md print:hidden">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <i data-lucide="building-2" class="text-black w-5 h-5"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-wider text-white">COTIZADOR <span class="font-light">G3C</span></h1>
+            </div>
+            <button class="bg-white hover:bg-gray-200 text-black px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors border border-gray-300" onclick="window.print()">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Exportar PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 sm:p-6 print:hidden">
+        
+        <div class="bg-white border-l-4 border-black shadow-sm border-y border-r border-gray-200 mb-6">
+            <button onclick="toggleSection('sec-info')" class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-3 text-black font-bold uppercase tracking-wide">
+                    <i data-lucide="folder-open" class="w-5 h-5"></i>
+                    <span>Información del Proyecto</span>
+                </div>
+                <i data-lucide="chevron-down" class="text-gray-400 w-5 h-5"></i>
+            </button>
+            <div id="sec-info" class="p-5 border-t border-gray-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-xs font-bold text-black mb-1 uppercase">Nombre del Proyecto</label>
+                        <input type="text" id="input-proyecto" placeholder="Ej. Torre G3C" class="w-full rounded-sm border py-2 px-3 text-sm border-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Asesor</label>
+                        <input type="text" id="input-asesor" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Cliente</label>
+                        <input type="text" id="input-cliente" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border-l-4 border-black shadow-sm border-y border-r border-gray-200 mb-6">
+            <button onclick="toggleSection('sec-unidad')" class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-3 text-black font-bold uppercase tracking-wide">
+                    <i data-lucide="tag" class="w-5 h-5"></i>
+                    <span>Unidad y Precio</span>
+                </div>
+                <i data-lucide="chevron-down" class="text-gray-400 w-5 h-5"></i>
+            </button>
+            <div id="sec-unidad" class="p-5 border-t border-gray-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Unidad / Descripción</label>
+                        <input type="text" id="input-unidad-txt" placeholder="Ej. Depto 502" class="w-full rounded-sm border border-gray-300 py-3 px-3 text-base">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-black mb-1 uppercase">Precio de Lista ($)</label>
+                        <div class="relative">
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-800 font-bold">$</div>
+                            <input type="number" id="input-precio-manual" placeholder="0.00" class="w-full rounded-sm border border-gray-400 bg-gray-50 py-3 pl-8 pr-3 text-lg font-bold text-black shadow-sm focus:bg-white transition-colors">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dynamic-content">
+            
+            <div class="bg-white border-l-4 border-black shadow-sm border-y border-r border-gray-200 mb-6">
+                <button onclick="toggleSection('sec-esquema')" class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center gap-3 text-black font-bold uppercase tracking-wide">
+                        <i data-lucide="calculator" class="w-5 h-5"></i>
+                        <span>Desglose y Fechas</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="text-gray-400 w-5 h-5"></i>
+                </button>
+                
+                <div id="sec-esquema" class="p-5 border-t border-gray-100 space-y-8">
+                    
+                    <div class="bg-gray-50 p-4 border border-gray-200 rounded-sm">
+                        <h4 class="font-bold text-black uppercase text-xs mb-3 flex items-center gap-2">
+                            <i data-lucide="bookmark" class="w-4 h-4"></i> A. Apartado
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
+                                <input type="number" id="input-apartado" value="50000" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm font-semibold">
+                                <p class="text-[9px] text-gray-400 mt-1">* Se descontará del primer rubro disponible.</p>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Fecha de Pago</label>
+                                <input type="date" id="input-fecha-apartado" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <h4 class="font-bold text-black uppercase text-xs flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4"></i> B. Enganche (<span id="lbl-enganche-pct">0</span>%)
+                            </h4>
+                            <span id="lbl-enganche-monto" class="font-bold text-sm">$0.00</span>
+                        </div>
+                        
+                        <input type="range" id="range-enganche" min="0" max="100" step="1" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-4">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-3 border border-gray-200">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Diferir Restante en (Meses)</label>
+                                <input type="number" id="input-meses-enganche" value="1" min="1" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Inicio Pagos Enganche</label>
+                                <input type="date" id="input-inicio-enganche" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                            </div>
+                            <div class="flex items-end pb-2">
+                                <p class="text-xs text-gray-600">Mensualidad Enganche: <span id="txt-mensualidad-enganche" class="font-bold text-black">$0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <h4 class="font-bold text-black uppercase text-xs flex items-center gap-2">
+                                <i data-lucide="calendar-clock" class="w-4 h-4"></i> C. Financiado (<span id="lbl-financiado-pct">0</span>%)
+                            </h4>
+                            <span id="lbl-financiado-monto" class="font-bold text-sm">$0.00</span>
+                        </div>
+
+                        <input type="range" id="range-financiado" min="0" max="100" step="1" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-4">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-3 border border-gray-200">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Plazo (Meses)</label>
+                                <input type="number" id="input-meses-financiado" value="12" min="0" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Inicio Mensualidad</label>
+                                <input type="date" id="input-inicio-financiado" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm">
+                            </div>
+                            <div class="flex items-end pb-2">
+                                <p class="text-xs text-gray-600">Mensualidad Financiada: <span id="txt-mensualidad-financiada" class="font-bold text-black">$0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 border border-gray-200 rounded-sm">
+                         <div class="flex justify-between mb-3">
+                            <h4 class="font-bold text-black uppercase text-xs flex items-center gap-2">
+                                <i data-lucide="key" class="w-4 h-4"></i> D. Contra Entrega (<span id="lbl-contra-pct">0</span>%)
+                            </h4>
+                            <span id="lbl-contra-monto" class="font-bold text-sm">$0.00</span>
+                        </div>
+                        
+                        <input type="range" id="range-contra" min="0" max="100" step="1" value="20" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-4">
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Fecha de Contra Entrega</label>
+                            <input type="date" id="input-fecha-contra" class="w-full rounded-sm border border-gray-300 py-2 px-3 text-sm md:w-1/2">
+                        </div>
+                    </div>
+
+                    <div id="error-suma" class="text-red-600 text-xs font-bold hidden-section p-2 bg-red-50 border border-red-200">
+                        ⚠️ La suma de porcentajes debe ser 100%. Actual: <span id="lbl-suma-total">0</span>%
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="bg-white border-l-4 border-black shadow-sm border-y border-r border-gray-200 mb-6">
+                <button onclick="toggleSection('sec-obs')" class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center gap-3 text-black font-bold uppercase tracking-wide">
+                        <i data-lucide="message-square" class="w-5 h-5"></i>
+                        <span>Observaciones / Anexos</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="text-gray-400 w-5 h-5"></i>
+                </button>
+                <div id="sec-obs" class="p-5 border-t border-gray-100">
+                    <textarea id="input-observaciones" rows="3" placeholder="Comentarios adicionales..." class="w-full p-3 border border-gray-300 rounded-sm text-sm"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="sticky-footer" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 p-4 z-40 print:hidden shadow-[0_-5px_20px_rgba(0,0,0,0.1)] hidden-section">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+           <div>
+             <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Precio Final</p>
+             <p id="txt-precio-footer" class="text-xl font-black text-black tracking-tight">$0.00</p>
+           </div>
+           <button onclick="window.print()" class="bg-black text-white px-6 py-3 rounded-md font-bold shadow-lg flex items-center gap-2 hover:bg-gray-800 transition-all border border-gray-800">
+             <i data-lucide="file-text" class="w-5 h-5"></i>
+             <span class="hidden sm:inline">Generar PDF</span>
+             <span class="sm:hidden">PDF</span>
+           </button>
+        </div>
+     </div>
+
+    <div id="print-layout" class="hidden print:flex flex-col bg-white w-[210mm] min-h-[297mm] mx-auto p-[12mm] relative box-border font-serif text-black">
+        
+        <div class="relative z-10 h-full flex flex-col justify-between">
+            
+            <div class="flex justify-between items-end border-b-4 border-black pb-4 mb-4">
+               <div>
+                   <h1 class="text-5xl font-black text-black tracking-tighter leading-none font-sans">G3C</h1>
+                   <p class="text-sm text-gray-500 tracking-[0.3em] uppercase font-bold mt-1">COTIZADOR INMOBILIARIO</p>
+               </div>
+               <div class="text-right">
+                   <h2 id="print-proyecto" class="text-lg font-bold text-black uppercase mb-1">PROYECTO</h2>
+                   <p class="text-xs text-gray-500 font-sans">Fecha de Emisión</p>
+                   <p id="print-fecha" class="text-sm font-bold text-black">---</p>
+               </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-8 mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <span class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Cliente</span>
+                    <p id="print-cliente" class="font-bold text-black text-sm uppercase">---</p>
+                </div>
+                <div class="text-right">
+                    <span class="block text-[9px] text-gray-400 uppercase tracking-widest mb-1">Asesor</span>
+                    <p id="print-asesor" class="font-bold text-black text-sm uppercase">---</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-100 p-4 border-l-4 border-black mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="block text-[9px] text-gray-500 uppercase">Unidad</span>
+                        <span id="print-unidad" class="font-bold text-xl text-black">---</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-[9px] text-gray-500 uppercase">Precio Total</span>
+                        <span id="print-precio-lista" class="font-bold text-xl text-black">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xs font-bold uppercase tracking-wide font-sans mb-2 border-b border-black inline-block">Resumen del Esquema</h3>
+                <table class="w-full text-[10px] font-sans border-collapse">
+                    <thead class="bg-black text-white">
+                        <tr>
+                            <th class="py-1 px-2 text-left w-1/3">Concepto</th>
+                            <th class="py-1 px-2 text-center">%</th>
+                            <th class="py-1 px-2 text-center">Detalle</th>
+                            <th class="py-1 px-2 text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 text-gray-800">
+                         <tr>
+                             <td class="py-2 px-2 font-bold">1. Apartado</td>
+                             <td class="py-2 px-2 text-center">-</td>
+                             <td class="py-2 px-2 text-center italic text-gray-500">Pago Inicial</td>
+                             <td id="print-apartado" class="py-2 px-2 text-right font-bold">$0.00</td>
+                         </tr>
+                         <tr>
+                             <td class="py-2 px-2 font-bold">2. Enganche Restante</td>
+                             <td id="print-enganche-pct" class="py-2 px-2 text-center">0%</td>
+                             <td id="print-enganche-detalle" class="py-2 px-2 text-center">Diferido</td>
+                             <td id="print-enganche-monto" class="py-2 px-2 text-right font-bold">$0.00</td>
+                         </tr>
+                         <tr>
+                             <td class="py-2 px-2 font-bold">3. Financiado</td>
+                             <td id="print-financiado-pct" class="py-2 px-2 text-center">0%</td>
+                             <td id="print-financiado-detalle" class="py-2 px-2 text-center">Mensualidades</td>
+                             <td id="print-financiado-monto" class="py-2 px-2 text-right font-bold">$0.00</td>
+                         </tr>
+                         <tr>
+                             <td class="py-2 px-2 font-bold">4. Contra Entrega</td>
+                             <td id="print-contra-pct" class="py-2 px-2 text-center">0%</td>
+                             <td class="py-2 px-2 text-center">Pago Final</td>
+                             <td id="print-contra-monto" class="py-2 px-2 text-right font-bold">$0.00</td>
+                         </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex-grow">
+                 <h3 class="text-xs font-bold uppercase tracking-wide font-sans mb-2 border-b border-black inline-block">Calendario de Pagos</h3>
+                
+                <div class="border border-black">
+                    <div class="grid grid-cols-6 gap-1 text-[9px] text-center font-sans font-bold text-white bg-black py-1">
+                        <div>#</div>
+                        <div class="col-span-2">Concepto</div>
+                        <div>Fecha</div>
+                        <div class="col-span-2 text-right pr-2">Monto</div>
+                    </div>
+                    <div id="print-calendario-rows" class="divide-y divide-gray-100">
+                        </div>
+                </div>
+            </div>
+
+            <div class="mt-4 font-sans pt-2">
+                <div id="print-obs-container" class="mb-4 border border-gray-300 p-2 hidden-section">
+                    <p class="text-[9px] font-bold uppercase">Observaciones:</p>
+                    <p id="print-observaciones" class="text-[9px] italic"></p>
+                </div>
+                <div class="border-t-2 border-black pt-2 text-center">
+                     <p class="text-[8px] text-gray-500 uppercase tracking-wider">
+                        Documento generado por Cotizador G3C. Precios y disponibilidad sujetos a cambio sin previo aviso.
+                     </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- STATE ---
+        let STATE = {
+            precioManual: 0,
+            
+            // Porcentajes
+            pctEnganche: 30,
+            pctFinanciado: 50,
+            pctContra: 20,
+            
+            // Montos calculados
+            montoApartado: 50000,
+            montoEngancheDiferido: 0,
+            montoFinanciado: 0,
+            montoContra: 0,
+
+            // Tiempos
+            fechaApartado: new Date().toISOString().split('T')[0],
+            
+            mesesEnganche: 1,
+            fechaInicioEnganche: new Date().toISOString().split('T')[0],
+            
+            mesesFinanciado: 12,
+            fechaInicioFinanciado: new Date().toISOString().split('T')[0],
+            
+            fechaContra: new Date().toISOString().split('T')[0]
+        };
+
+        // --- UTILS ---
+        const formatMoney = (amount) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 }).format(amount);
+        const createUTCDate = (dateString) => {
+            if(!dateString) return new Date();
+            const [year, month, day] = dateString.split('-').map(Number);
+            return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+        };
+        const formatDate = (dateString) => {
+            if (!dateString) return '---';
+            const date = createUTCDate(dateString);
+            return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).toUpperCase();
+        };
+        const addMonths = (dateString, months) => {
+            const date = createUTCDate(dateString);
+            date.setUTCMonth(date.getUTCMonth() + parseInt(months));
+            return date.toISOString().split('T')[0];
+        };
+
+        // --- INIT & EVENTS ---
+        function init() {
+            lucide.createIcons();
+            
+            // Set Default Dates
+            const today = new Date().toISOString().split('T')[0];
+            const nextMonth = addMonths(today, 1);
+            const nextYear = addMonths(today, 12);
+            
+            document.getElementById('input-fecha-apartado').value = today;
+            document.getElementById('input-inicio-enganche').value = nextMonth;
+            document.getElementById('input-inicio-financiado').value = addMonths(nextMonth, 1); 
+            document.getElementById('input-fecha-contra').value = nextYear;
+
+            bindEvents();
+        }
+
+        function bindEvents() {
+            const triggers = [
+                'input-precio-manual', 'input-apartado', 
+                'range-enganche', 'range-financiado', 'range-contra',
+                'input-meses-enganche', 'input-meses-financiado',
+                'input-fecha-apartado', 'input-inicio-enganche', 'input-inicio-financiado', 'input-fecha-contra'
+            ];
+
+            triggers.forEach(id => {
+                document.getElementById(id).addEventListener('input', recalculate);
+            });
+
+            const texts = ['input-proyecto', 'input-cliente', 'input-asesor', 'input-unidad-txt', 'input-observaciones'];
+            texts.forEach(id => {
+                document.getElementById(id).addEventListener('input', updatePrintTexts);
+            });
+        }
+
+        function recalculate() {
+            // 1. Leer Valores Base
+            STATE.precioManual = Number(document.getElementById('input-precio-manual').value) || 0;
+            STATE.montoApartado = Number(document.getElementById('input-apartado').value) || 0;
+            
+            STATE.pctEnganche = Number(document.getElementById('range-enganche').value);
+            STATE.pctFinanciado = Number(document.getElementById('range-financiado').value);
+            STATE.pctContra = Number(document.getElementById('range-contra').value);
+
+            STATE.mesesEnganche = Number(document.getElementById('input-meses-enganche').value);
+            STATE.mesesFinanciado = Number(document.getElementById('input-meses-financiado').value);
+
+            // Fechas
+            STATE.fechaApartado = document.getElementById('input-fecha-apartado').value;
+            STATE.fechaInicioEnganche = document.getElementById('input-inicio-enganche').value;
+            STATE.fechaInicioFinanciado = document.getElementById('input-inicio-financiado').value;
+            STATE.fechaContra = document.getElementById('input-fecha-contra').value;
+
+            // 2. Validar Suma 100%
+            const suma = STATE.pctEnganche + STATE.pctFinanciado + STATE.pctContra;
+            const errorDiv = document.getElementById('error-suma');
+            if(suma !== 100) {
+                errorDiv.style.display = 'block';
+                document.getElementById('lbl-suma-total').innerText = suma;
+            } else {
+                errorDiv.style.display = 'none';
+            }
+
+            // 3. Cálculos de Cascada (El apartado se come al primero que encuentre)
+            // Calculamos montos "crudos" basados en porcentaje
+            let rawEnganche = STATE.precioManual * (STATE.pctEnganche / 100);
+            let rawFinanciado = STATE.precioManual * (STATE.pctFinanciado / 100);
+            let rawContra = STATE.precioManual * (STATE.pctContra / 100);
+
+            let saldoApartado = STATE.montoApartado;
+
+            // Intenta descontar del Enganche
+            if(rawEnganche >= saldoApartado) {
+                STATE.montoEngancheDiferido = rawEnganche - saldoApartado;
+                saldoApartado = 0;
+            } else {
+                STATE.montoEngancheDiferido = 0;
+                saldoApartado -= rawEnganche; // Lo que sobra se pasa al siguiente
+            }
+
+            // Intenta descontar del Financiado lo que sobre del apartado
+            if(rawFinanciado >= saldoApartado) {
+                STATE.montoFinanciado = rawFinanciado - saldoApartado;
+                saldoApartado = 0;
+            } else {
+                STATE.montoFinanciado = 0;
+                saldoApartado -= rawFinanciado;
+            }
+
+            // Intenta descontar de Contra Entrega lo que quede
+            if(rawContra >= saldoApartado) {
+                STATE.montoContra = rawContra - saldoApartado;
+                saldoApartado = 0;
+            } else {
+                // Caso extremo: El apartado es mayor que el precio total
+                STATE.montoContra = 0;
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            if(STATE.precioManual > 0) {
+                document.getElementById('sticky-footer').style.display = 'block';
+            }
+
+            // Update Labels UI
+            document.getElementById('lbl-enganche-pct').innerText = STATE.pctEnganche;
+            // Mostramos el monto "bruto" que representa el porcentaje para referencia visual, aunque el cobro real sea menos el apartado
+            const brutoEnganche = STATE.precioManual * (STATE.pctEnganche / 100);
+            document.getElementById('lbl-enganche-monto').innerText = formatMoney(brutoEnganche);
+            
+            const brutoFin = STATE.precioManual * (STATE.pctFinanciado / 100);
+            document.getElementById('lbl-financiado-pct').innerText = STATE.pctFinanciado;
+            document.getElementById('lbl-financiado-monto').innerText = formatMoney(brutoFin);
+
+            const brutoContra = STATE.precioManual * (STATE.pctContra / 100);
+            document.getElementById('lbl-contra-pct').innerText = STATE.pctContra;
+            document.getElementById('lbl-contra-monto').innerText = formatMoney(brutoContra);
+
+            // Mensualidades Estimadas (del Neto)
+            const menEng = STATE.mesesEnganche > 0 ? STATE.montoEngancheDiferido / STATE.mesesEnganche : 0;
+            document.getElementById('txt-mensualidad-enganche').innerText = formatMoney(menEng);
+
+            const menFin = STATE.mesesFinanciado > 0 ? STATE.montoFinanciado / STATE.mesesFinanciado : 0;
+            document.getElementById('txt-mensualidad-financiada').innerText = formatMoney(menFin);
+
+            // Footer
+            document.getElementById('txt-precio-footer').innerText = formatMoney(STATE.precioManual);
+
+            updatePrintView();
+        }
+
+        function updatePrintTexts() {
+            document.getElementById('print-proyecto').innerText = document.getElementById('input-proyecto').value || 'PROYECTO';
+            document.getElementById('print-cliente').innerText = document.getElementById('input-cliente').value || '---';
+            document.getElementById('print-asesor').innerText = document.getElementById('input-asesor').value || '---';
+            document.getElementById('print-unidad').innerText = document.getElementById('input-unidad-txt').value || 'Unidad Manual';
+            
+            const obs = document.getElementById('input-observaciones').value;
+            if(obs) {
+                document.getElementById('print-obs-container').style.display = 'block';
+                document.getElementById('print-observaciones').innerText = obs;
+            } else {
+                document.getElementById('print-obs-container').style.display = 'none';
+            }
+        }
+
+        function updatePrintView() {
+            updatePrintTexts();
+            document.getElementById('print-fecha').innerText = formatDate(new Date().toISOString().split('T')[0]);
+            document.getElementById('print-precio-lista').innerText = formatMoney(STATE.precioManual);
+
+            // Tabla Resumen
+            document.getElementById('print-apartado').innerText = formatMoney(STATE.montoApartado);
+            
+            document.getElementById('print-enganche-pct').innerText = `${STATE.pctEnganche}%`;
+            document.getElementById('print-enganche-detalle').innerText = `Restante en ${STATE.mesesEnganche} Pagos`;
+            document.getElementById('print-enganche-monto').innerText = formatMoney(STATE.montoEngancheDiferido);
+
+            document.getElementById('print-financiado-pct').innerText = `${STATE.pctFinanciado}%`;
+            document.getElementById('print-financiado-detalle').innerText = `${STATE.mesesFinanciado} Mensualidades`;
+            document.getElementById('print-financiado-monto').innerText = formatMoney(STATE.montoFinanciado);
+
+            document.getElementById('print-contra-pct').innerText = `${STATE.pctContra}%`;
+            document.getElementById('print-contra-monto').innerText = formatMoney(STATE.montoContra);
+
+            generateCalendar();
+        }
+
+        function generateCalendar() {
+            const container = document.getElementById('print-calendario-rows');
+            container.innerHTML = '';
+            let count = 1;
+
+            const addRow = (concepto, fecha, monto, isBold = false) => {
+                const div = document.createElement('div');
+                div.className = `grid grid-cols-6 gap-1 text-[9px] text-center font-sans py-1 text-black ${count % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`;
+                const weight = isBold ? 'font-bold' : 'font-medium';
+                div.innerHTML = `
+                    <div>${count}</div>
+                    <div class="col-span-2 text-left pl-2 ${weight}">${concepto}</div>
+                    <div>${fecha}</div>
+                    <div class="col-span-2 text-right pr-2 ${weight}">${monto}</div>
+                `;
+                container.appendChild(div);
+                count++;
+            };
+
+            // 1. Apartado
+            if(STATE.montoApartado > 0) {
+                addRow('Pago de Apartado', formatDate(STATE.fechaApartado), formatMoney(STATE.montoApartado), true);
+            }
+
+            // 2. Enganche Diferido
+            if(STATE.montoEngancheDiferido > 0 && STATE.mesesEnganche > 0) {
+                const pagoMensual = STATE.montoEngancheDiferido / STATE.mesesEnganche;
+                for(let i=0; i<STATE.mesesEnganche; i++) {
+                    const fecha = addMonths(STATE.fechaInicioEnganche, i);
+                    addRow(`Enganche (${i+1}/${STATE.mesesEnganche})`, formatDate(fecha), formatMoney(pagoMensual));
+                }
+            }
+
+            // 3. Financiado
+            if(STATE.montoFinanciado > 0 && STATE.mesesFinanciado > 0) {
+                const pagoMensual = STATE.montoFinanciado / STATE.mesesFinanciado;
+                for(let i=0; i<STATE.mesesFinanciado; i++) {
+                    const fecha = addMonths(STATE.fechaInicioFinanciado, i);
+                    addRow(`Mensualidad (${i+1}/${STATE.mesesFinanciado})`, formatDate(fecha), formatMoney(pagoMensual));
+                }
+            }
+
+            // 4. Contra Entrega
+            if(STATE.montoContra > 0) {
+                addRow('Pago Contra Entrega', formatDate(STATE.fechaContra), formatMoney(STATE.montoContra), true);
+            }
+        }
+
+        function toggleSection(id) {
+            const el = document.getElementById(id);
+            if (el.style.display === 'none') el.style.display = 'block';
+            else el.style.display = 'none';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
